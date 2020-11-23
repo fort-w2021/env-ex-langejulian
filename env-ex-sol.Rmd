@@ -1,0 +1,52 @@
+## Solution env-ex ##
+
+a)
+Unterschiede zwischen Listen und Environments:
+  - Alle Objekte in environments müssen (eindeutige und einzigartige) Namen haben
+  - Objekte in environments sind nicht geordnet
+  - Environments haben eine Elternumgebung
+  - Environments enthalten nicht Werte der Objekte, sondern pointen nur auf den
+    Speicherort der Objekte (reference semantics)
+
+b) 
+`ls()` und `rm()` suchen in der aktuellen Umgebung, also der environment, in
+der die Funktion aufgerufen wurde.
+
+c) 
+`<-` legt eine neue `binding` in der aktuellen Umgebung (current environment) 
+an bzw. weist einer Variable einen neuen Wert zu. `<<-` legt keine neue Variable 
+in der aktuellen Umgebung, sondern modifiziert eine Variable in der Elternumgebung 
+der aktuellen Umgebung. Sollte in der Elternumgebung keine Variable mit dem Namen 
+gefunden werden, so wird eine neue Variable in der globalen Umgebung (`.GlobalEnv`)
+angelegt.
+
+d) 
+```{r, where}
+pryr::where
+```
+
+```{r, anywhere, eval=FALSE}
+#' Function returning all parent environments in the search path in which a
+#' variable is defined
+#' @param name character vector of length 1 giving the name of the variable
+#' @param env environment where the search should start
+#'
+#' @return  list of all environments in which a variable with the specified name was found
+anywhere <- function(name, env = parent.frame()) {
+  checkmate::assert_character(name, len = 1)
+  env <- pryr:::to_env(env) # to_env() already does input checking/throws sensible errors
+
+  env_list <- list()
+
+  # terminating if the EmptyEnv is reached
+  if (identical(env, emptyenv())) {
+    return(env_list)
+  }
+  # if variable with given name is found in the searched environment, the environment is added to the list
+  if (exists(name, env, inherits = FALSE)) {
+    env_list <- c(env_list, env)
+  }
+  # recursion up the search path
+  env_list <- c(env_list, anywhere(name, parent.env(env)))
+}
+```
